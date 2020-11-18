@@ -41,7 +41,6 @@ public class SntpClient {
     private static final int TRANSMIT_TIME_OFFSET = 40;
     private static final int NTP_PACKET_SIZE = 48;
 
-    private static final int NTP_PORT = 123;
     private static final int NTP_MODE_CLIENT = 3;
     private static final int NTP_MODE_SERVER = 4;
     private static final int NTP_MODE_BROADCAST = 5;
@@ -81,14 +80,14 @@ public class SntpClient {
      * @return Encapsulated response from the NTP server.
      * @throws IOException network error
      */
-    public Response requestTime(String host, Long timeout) throws IOException {
+    public Response requestTime(String host, int port, Long timeout) throws IOException {
         DatagramSocket socket = null;
         try {
             InetAddress address = dnsResolver.resolve(host);
             socket = datagramFactory.createSocket();
             socket.setSoTimeout(timeout.intValue());
             byte[] requestBuffer = new byte[NTP_PACKET_SIZE];
-            DatagramPacket request = datagramFactory.createPacket(requestBuffer, address, NTP_PORT);
+            DatagramPacket request = datagramFactory.createPacket(requestBuffer, address, port);
 
             // set mode = 3 (client) and version = 3
             // mode is in low 3 bits of first byte

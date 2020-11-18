@@ -4,6 +4,7 @@ import java.util.concurrent.TimeUnit
 
 object DefaultParam {
     val NTP_HOSTS = listOf("0.pool.ntp.org", "1.pool.ntp.org", "2.pool.ntp.org", "3.pool.ntp.org")
+    const val NTP_PORT = 123
     // Sync with NTP if the cache is older than this value
     val CACHE_EXPIRATION_MS = TimeUnit.MINUTES.toMillis(1)
     // Sync with NTP only after MIN_WAIT_TIME_BETWEEN_SYNC_MS regardless of success or failure

@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 public class SntpClientTest {
 
     private static final String HOST = "host";
+    private static final int PORT = 123;
     private static final long TIMEOUT = 1200;
 
     @Mock
@@ -77,7 +78,7 @@ public class SntpClientTest {
 
     @Test
     public void requestTimeMustSetModeAndVersion() throws IOException {
-        sntpClient.requestTime(HOST, TIMEOUT);
+        sntpClient.requestTime(HOST, PORT, TIMEOUT);
 
         ArgumentCaptor<byte[]> argumentCaptor = ArgumentCaptor.forClass(byte[].class);
 
@@ -98,7 +99,7 @@ public class SntpClientTest {
         DatagramPacket packet = mock(DatagramPacket.class);
         when(datagramFactory.createPacket(any(byte[].class), any(InetAddress.class), eq(123))).thenReturn(packet);
 
-        sntpClient.requestTime(HOST, TIMEOUT);
+        sntpClient.requestTime(HOST, PORT, TIMEOUT);
 
         ArgumentCaptor<byte[]> argumentCaptor = ArgumentCaptor.forClass(byte[].class);
 
@@ -129,7 +130,7 @@ public class SntpClientTest {
                 .thenThrow(new RuntimeException("No more interactions expected."));
 
         final long ntpTime = 1473227268363L;
-        final SntpClient.Response clientResponse = sntpClient.requestTime(HOST, TIMEOUT);
+        final SntpClient.Response clientResponse = sntpClient.requestTime(HOST, PORT, TIMEOUT);
 
         Mockito.verify(datagramFactory).createPacket(any(byte[].class));
         Mockito.verify(datagramSocket).receive(any(DatagramPacket.class));
@@ -144,7 +145,7 @@ public class SntpClientTest {
 
     @Test
     public void requestTimeMustCloseTheSocket() throws IOException {
-        sntpClient.requestTime(HOST, TIMEOUT);
+        sntpClient.requestTime(HOST, PORT, TIMEOUT);
 
         Mockito.verify(datagramSocket).close();
     }
@@ -157,7 +158,7 @@ public class SntpClientTest {
         Mockito.doThrow(ioException).when(datagramSocket).send(any(DatagramPacket.class));
 
         try {
-            sntpClient.requestTime(HOST, TIMEOUT);
+            sntpClient.requestTime(HOST, PORT, TIMEOUT);
             fail("Exception expected.");
         } catch (IOException e) {
             assertThat(e).isSameAs(ioException);
@@ -168,7 +169,7 @@ public class SntpClientTest {
 
     @Test
     public void requestTimeShouldSetTimeout() throws IOException {
-        sntpClient.requestTime(HOST, 1234L);
+        sntpClient.requestTime(HOST, PORT, 1234L);
 
         Mockito.verify(datagramSocket).setSoTimeout(1234);
     }

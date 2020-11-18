@@ -64,6 +64,7 @@ internal class SntpServiceImpl @JvmOverloads constructor(private val sntpClient:
                                                          private val responseCache: SntpResponseCache,
                                                          private val ntpSyncListener: SyncListener?,
                                                          private val ntpHosts: List<String>,
+                                                         private val ntpPort: Int,
                                                          private val requestTimeoutMs: Long = TIMEOUT_MS,
                                                          private val minWaitTimeBetweenSyncMs: Long = MIN_WAIT_TIME_BETWEEN_SYNC_MS,
                                                          private val cacheExpirationMs: Long = CACHE_EXPIRATION_MS,
@@ -148,7 +149,7 @@ internal class SntpServiceImpl @JvmOverloads constructor(private val sntpClient:
             val t1 = deviceClock.getElapsedTimeMs()
             ntpSyncListener?.onStartSync(host)
             try {
-                val response = sntpClient.requestTime(host, requestTimeoutMs)
+                val response = sntpClient.requestTime(host, ntpPort, requestTimeoutMs)
                 if (response.currentTimeMs < 0) {
                     throw NTPSyncException("Invalid time ${response.currentTimeMs} received from $host")
                 }
