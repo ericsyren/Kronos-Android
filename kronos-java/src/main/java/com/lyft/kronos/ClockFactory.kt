@@ -3,6 +3,7 @@ package com.lyft.kronos
 import com.lyft.kronos.DefaultParam.CACHE_EXPIRATION_MS
 import com.lyft.kronos.DefaultParam.MIN_WAIT_TIME_BETWEEN_SYNC_MS
 import com.lyft.kronos.DefaultParam.NTP_HOSTS
+import com.lyft.kronos.DefaultParam.NTP_PORT
 import com.lyft.kronos.DefaultParam.TIMEOUT_MS
 import com.lyft.kronos.internal.KronosClockImpl
 import com.lyft.kronos.internal.ntp.*
@@ -17,6 +18,7 @@ object ClockFactory {
      * @param syncResponseCache will be used to cache sync response so that time can be calculated after a successful clock sync
      * @param syncListener Allows you to log sync operation successes and errors.
      * @param ntpHosts Kronos synchronizes with this set of NTP servers. The default set of servers are ordered according to success rate from analytic
+     * @param ntpPort Kronos uses this port to synchronize with NTP servers. NTP standard is 123
      * @param localClock local device clock that will be used as a fallback if NTP sync fails.
      * @param requestTimeoutMs Lengthen or shorten the timeout value. If the NTP server fails to respond within the given time, the next server will be contacted. If none of the server respond within the given time, the sync operation will be considered a failure.
      * @param minWaitTimeBetweenSyncMs Kronos attempts a synchronization at most once a minute. If you want to change the frequency, supply the desired time in milliseconds. Note that you should also supply a cacheExpirationMs value. For example, if you shorten the minWaitTimeBetweenSyncMs to 30 seconds, but leave the cacheExpirationMs to 1 minute, it will have no affect because the cache is still valid within the 1 minute window.
@@ -29,6 +31,7 @@ object ClockFactory {
                           syncResponseCache: SyncResponseCache,
                           syncListener: SyncListener? = null,
                           ntpHosts: List<String> = NTP_HOSTS,
+                          ntpPort: Int = NTP_PORT,
                           requestTimeoutMs: Long = TIMEOUT_MS,
                           minWaitTimeBetweenSyncMs: Long = MIN_WAIT_TIME_BETWEEN_SYNC_MS,
                           cacheExpirationMs: Long = CACHE_EXPIRATION_MS): KronosClock {
@@ -39,7 +42,7 @@ object ClockFactory {
 
         val sntpClient = SntpClient(localClock, DnsResolverImpl(), DatagramFactoryImpl())
         val cache = SntpResponseCacheImpl(syncResponseCache, localClock)
-        val ntpService = SntpServiceImpl(sntpClient, localClock, cache, syncListener, ntpHosts, requestTimeoutMs, minWaitTimeBetweenSyncMs, cacheExpirationMs)
+        val ntpService = SntpServiceImpl(sntpClient, localClock, cache, syncListener, ntpHosts, ntpPort, requestTimeoutMs, minWaitTimeBetweenSyncMs, cacheExpirationMs)
         return KronosClockImpl(ntpService, localClock)
     }
 }
