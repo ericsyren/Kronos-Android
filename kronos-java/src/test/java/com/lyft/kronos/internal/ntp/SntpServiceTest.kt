@@ -17,17 +17,18 @@ class SntpServiceTest {
     private val sntpSyncListener = mock<SyncListener>()
     private val mockResponse = mock<SntpClient.Response>()
     private val ntpHosts = listOf("2.us.pool.ntp.org", "1.us.pool.ntp.org", "0.us.pool.ntp.org")
+    private val ntpPort = 123
 
     init {
         whenever(deviceClock.getElapsedTimeMs()).then({ System.currentTimeMillis() })
-        sntpService = SntpServiceImpl(sntpClient, deviceClock, responseCache, sntpSyncListener, ntpHosts)
+        sntpService = SntpServiceImpl(sntpClient, deviceClock, responseCache, sntpSyncListener, ntpHosts, ntpPort)
     }
 
     @Test
     fun testRecoverFromNetworkError() {
 
         val mockError = mock<IOException>()
-        whenever(sntpClient.requestTime(any(), any())).thenThrow(mockError)
+        whenever(sntpClient.requestTime(any(), any(), any())).thenThrow(mockError)
         assertThat(sntpService.sync()).isFalse()
 
         verify(sntpSyncListener, times(3)).onStartSync(any())
@@ -35,7 +36,7 @@ class SntpServiceTest {
         verify(sntpSyncListener, times(1)).onError("1.us.pool.ntp.org", mockError)
         verify(sntpSyncListener, times(1)).onError("0.us.pool.ntp.org", mockError)
 
-        whenever(sntpClient.requestTime(any(), any())).thenReturn(mockResponse)
+        whenever(sntpClient.requestTime(any(), any(), any())).thenReturn(mockResponse)
         assertThat(sntpService.sync()).isTrue()
 
         verify(sntpSyncListener, times(2)).onStartSync("2.us.pool.ntp.org")
@@ -45,8 +46,8 @@ class SntpServiceTest {
     @Test
     fun testOneOfThreeServerHasError() {
         val mockError = mock<IOException>()
-        whenever(sntpClient.requestTime("2.us.pool.ntp.org", TIMEOUT_MS)).thenThrow(mockError)
-        whenever(sntpClient.requestTime("1.us.pool.ntp.org", TIMEOUT_MS)).thenReturn(mockResponse)
+        whenever(sntpClient.requestTime("2.us.pool.ntp.org", ntpPort, TIMEOUT_MS)).thenThrow(mockError)
+        whenever(sntpClient.requestTime("1.us.pool.ntp.org", ntpPort, TIMEOUT_MS)).thenReturn(mockResponse)
         assertThat(sntpService.sync()).isTrue()
 
         verify(sntpSyncListener, times(1)).onStartSync("2.us.pool.ntp.org")
@@ -58,7 +59,7 @@ class SntpServiceTest {
     @Test
     fun shouldReturnTimeUnavailableAfterShutdown() {
         sntpService.shutdown()
-        verify(sntpClient, never()).requestTime(any(), any())
+        verify(sntpClient, never()).requestTime(any(), any(), any())
         assertThatExceptionOfType(IllegalStateException::class.java).isThrownBy { sntpService.sync() }
         assertThatExceptionOfType(IllegalStateException::class.java).isThrownBy { sntpService.syncInBackground() }
         assertThatExceptionOfType(IllegalStateException::class.java).isThrownBy { sntpService.currentTimeMs() }
@@ -66,8 +67,8 @@ class SntpServiceTest {
 
     @Test
     fun `throw error if response has negative time value`() {
-        whenever(sntpClient.requestTime("1.us.pool.ntp.org", TIMEOUT_MS)).thenReturn(mockResponse)
-        whenever(sntpClient.requestTime("2.us.pool.ntp.org", TIMEOUT_MS)).thenReturn(mockResponse)
+        whenever(sntpClient.requestTime("1.us.pool.ntp.org", ntpPort, TIMEOUT_MS)).thenReturn(mockResponse)
+        whenever(sntpClient.requestTime("2.us.pool.ntp.org", ntpPort, TIMEOUT_MS)).thenReturn(mockResponse)
         whenever(mockResponse.currentTimeMs).thenReturn(-1)
 
         assertThat(sntpService.sync()).isFalse()
